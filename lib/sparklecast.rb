@@ -1,5 +1,5 @@
 require 'sparklecast/version'
+require 'sparklecast/appcast'
 
 module Sparklecast
-  # Your code goes here...
 end
