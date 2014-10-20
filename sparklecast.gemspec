@@ -8,8 +8,10 @@ Gem::Specification.new do |spec|
   spec.version       = Sparklecast::VERSION
   spec.authors       = ['Anatoliy Plastinin']
   spec.email         = ['hello@antlypls.com']
-  spec.summary       = 'TODO: Write a short summary. Required.'
-  spec.description   = 'TODO: Write a longer description. Optional.'
+  spec.summary       = "Sparklecast helps you to create and modify Sparkle's " \
+                       'appcast files.'
+  spec.description   = "Sparklecast helps you to create and modify Sparkle's " \
+                       'appcast files.'
   spec.homepage      = ''
   spec.license       = 'MIT'
 

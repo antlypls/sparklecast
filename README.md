@@ -1,6 +1,7 @@
 # Sparklecast
 
-TODO: Write a gem description
+Sparklecast helps you to create and modify
+[Sparkle's](https://github.com/sparkle-project/Sparkle) appcast files.
 
 ## Installation
 
