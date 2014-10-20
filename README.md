@@ -19,7 +19,16 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```{ruby}
+appcast = Sparklecast::Appcast.new(
+  'Sparkle Test App Changelog',
+  'http://sparkle-project.org/files/sparkletestcast.xml',
+  'Most recent changes with links to updates.',
+  'en'
+)
+
+appcast.generate # returns an appcast rss feed
+```
 
 ## Contributing
 
