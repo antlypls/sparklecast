@@ -1,5 +1,8 @@
 # Sparklecast
 
+[![Code Climate](http://img.shields.io/codeclimate/github/antlypls/sparklecast.svg?style=flat)](https://codeclimate.com/github/antlypls/sparklecast)
+[![Build Status](http://img.shields.io/travis/antlypls/sparklecast.svg?style=flat)](https://travis-ci.org/antlypls/sparklecast)
+
 Sparklecast helps you to create and modify
 [Sparkle's](https://github.com/sparkle-project/Sparkle) appcast files.
 
