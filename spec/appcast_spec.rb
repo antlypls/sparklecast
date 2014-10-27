@@ -1,12 +1,14 @@
 require 'spec_helper'
 
 describe Sparklecast::Appcast do
+  let(:title) { 'Sparkle Test App Changelog' }
+  let(:link) { 'http://sparkle-project.org/files/sparkletestcast.xml' }
+  let(:description) { 'Most recent changes with links to updates.' }
+  let(:language) { 'en' }
+
   subject(:cast) do
     described_class.new(
-      'Sparkle Test App Changelog',
-      'http://sparkle-project.org/files/sparkletestcast.xml',
-      'Most recent changes with links to updates.',
-      'en'
+      title, link, description, language
     )
   end
 
