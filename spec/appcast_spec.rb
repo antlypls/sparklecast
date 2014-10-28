@@ -97,8 +97,14 @@ def check_item(node, xpath, item_data)
       })
 end
 
-describe Sparklecast::Appcast do
+def check_appcast(xml, title, link, description, language)
+  expect(xml).to have_xpath('//rss/channel/title').with_text(title)
+  expect(xml).to have_xpath('//rss/channel/link').with_text(link)
+  expect(xml).to have_xpath('//rss/channel/description').with_text(description)
+  expect(xml).to have_xpath('//rss/channel/language').with_text(language)
+end
 
+describe Sparklecast::Appcast do
   let(:title) { 'Sparkle Test App Changelog' }
   let(:link) { 'http://sparkle-project.org/files/sparkletestcast.xml' }
   let(:description) { 'Most recent changes with links to updates.' }
@@ -122,10 +128,7 @@ describe Sparklecast::Appcast do
       })
       expect(root.attr('version')).to eq('2.0')
 
-      expect(out).to have_xpath('//rss/channel/title').with_text(title)
-      expect(out).to have_xpath('//rss/channel/link').with_text(link)
-      expect(out).to have_xpath('//rss/channel/description').with_text(description)
-      expect(out).to have_xpath('//rss/channel/language').with_text(language)
+      check_appcast(out, title, link, description, language)
     end
   end
 
@@ -163,10 +166,7 @@ describe Sparklecast::Appcast do
       item = create_item(item_data)
       result = cast.add_item(original_xml, item)
 
-      expect(result).to have_xpath('//rss/channel/title').with_text(title)
-      expect(result).to have_xpath('//rss/channel/link').with_text(link)
-      expect(result).to have_xpath('//rss/channel/description').with_text(description)
-      expect(result).to have_xpath('//rss/channel/language').with_text(language)
+      check_appcast(result, title, link, description, language)
 
       check_item(result, '//rss/channel/item[1]', item_data)
     end
@@ -177,10 +177,7 @@ describe Sparklecast::Appcast do
       item = create_item(new_item_data)
       result = cast.add_item(original_xml, item)
 
-      expect(result).to have_xpath('//rss/channel/title').with_text(title)
-      expect(result).to have_xpath('//rss/channel/link').with_text(link)
-      expect(result).to have_xpath('//rss/channel/description').with_text(description)
-      expect(result).to have_xpath('//rss/channel/language').with_text(language)
+      check_appcast(result, title, link, description, language)
 
       check_item(result, '//rss/channel/item[1]', item_data)
       check_item(result, '//rss/channel/item[2]', new_item_data)
@@ -189,7 +186,6 @@ describe Sparklecast::Appcast do
 end
 
 describe Sparklecast::Appcast::Item do
-
   let(:item_data) do
     OpenStruct.new(
       title: 'Version 2.0',
