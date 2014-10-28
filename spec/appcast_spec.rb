@@ -1,6 +1,104 @@
 require 'spec_helper'
+require 'ostruct'
+
+# valid XML
+# <?xml version="1.0" encoding="utf-8"?>
+# <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
+#   <channel>
+#     <title>Sparkle Test App Changelog</title>
+#     <link>http://sparkle-project.org/files/sparkletestcast.xml</link>
+#     <description>Most recent changes with links to updates.</description>
+#     <language>en</language>
+#   </channel>
+# </rss>
+
+# valid XML with one item
+# <?xml version="1.0" encoding="utf-8"?>
+# <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
+#   <channel>
+#     <title>Sparkle Test App Changelog</title>
+#     <link>http://sparkle-project.org/files/sparkletestcast.xml</link>
+#     <description>Most recent changes with links to updates.</description>
+#     <language>en</language>
+#     <item>
+#       <title>Version 2.0</title>
+#       <description><![CDATA[HTML]]></description>
+#       <pubDate>Sat, 26 Jul 2014 15:20:11 +0000</pubDate>
+#       <enclosure url="http://sparkle-project.org/files/Sparkle%20Test%20App.zip" length="107758" type="application/octet-stream" sparkle:version="2.0" sparkle:dsaSignature="MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=="/>
+#     </item>
+#   </channel>
+# </rss>
+
+# valid XML with rwo items item
+# <?xml version="1.0" encoding="utf-8"?>
+# <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
+#   <channel>
+#     <title>Sparkle Test App Changelog</title>
+#     <link>http://sparkle-project.org/files/sparkletestcast.xml</link>
+#     <description>Most recent changes with links to updates.</description>
+#     <language>en</language>
+#     <item>
+#       <title>Version 2.0</title>
+#       <description><![CDATA[HTML]]></description>
+#       <pubDate>Sat, 26 Jul 2014 15:20:11 +0000</pubDate>
+#       <enclosure url="http://sparkle-project.org/files/Sparkle%20Test%20App.zip" length="107758" type="application/octet-stream" sparkle:version="2.0" sparkle:dsaSignature="MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=="/>
+#     </item>
+#     <item>
+#       <title>Version 3.0</title>
+#       <description><![CDATA[HTML 2]]></description>
+#       <pubDate>Sat, 26 Jul 2014 15:20:11 +0000</pubDate>
+#       <enclosure url="http://sparkle-project.org/files/Sparkle%20Test%20App.zip" length="107758" type="application/octet-stream" sparkle:version="2.0" sparkle:dsaSignature="MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=="/>
+#     </item>
+#   </channel>
+# </rss>
+
+# item node xml
+# <?xml version="1.0" encoding="utf-8"?>
+# <item>
+#   <title>Version 2.0</title>
+#   <description><![CDATA[HTML]]></description>
+#   <pubDate>Sat, 26 Jul 2014 15:20:11 +0000</pubDate>
+#   <enclosure url="http://sparkle-project.org/files/Sparkle%20Test%20App.zip" length="107758" type="application/octet-stream" sparkle:version="2.0" sparkle:dsaSignature="MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=="/>
+# </item>
+
+def create_item(item_data)
+  item = Sparklecast::Appcast::Item.new
+
+  item.title = item_data.title
+  item.description = item_data.description
+  item.pub_date = item_data.pub_date
+  item.url = item_data.url
+  item.sparkle_version = item_data.sparkle_version
+  item.length = item_data.length
+  item.type = item_data.type
+  item.dsa_signature = item_data.dsa_signature
+
+  item
+end
+
+def check_item(node, xpath, item_data)
+  expect(node).to have_xpath("#{xpath}/title").with_text(item_data.title)
+  # check CDATA
+  expect(node)
+    .to have_xpath("#{xpath}/description")
+      .with_text(item_data.description)
+  expect(node)
+    .to have_xpath("#{xpath}/pubDate")
+      .with_text(item_data.pub_date.rfc2822)
+
+  expect(node)
+    .to have_xpath("#{xpath}/enclosure")
+      .with_attr({
+        'url' => item_data.url,
+        'length' => item_data.length,
+        'type' => item_data.type
+        # 'sparkle:version' => '2.0',
+        # 'sparkle:dsaSignature' => item_data.dsa_signature
+      })
+end
 
 describe Sparklecast::Appcast do
+
   let(:title) { 'Sparkle Test App Changelog' }
   let(:link) { 'http://sparkle-project.org/files/sparkletestcast.xml' }
   let(:description) { 'Most recent changes with links to updates.' }
@@ -13,26 +111,55 @@ describe Sparklecast::Appcast do
   end
 
   describe '#generate' do
-    it 'generates cast xml' do
+    it 'generates correct appcast cast xml' do
       out = cast.generate
 
-      expect(out).to eq(<<-XML.gsub(/^ {8}/, ''))
-        <?xml version="1.0" encoding="utf-8"?>
-        <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
-          <channel>
-            <title>Sparkle Test App Changelog</title>
-            <link>http://sparkle-project.org/files/sparkletestcast.xml</link>
-            <description>Most recent changes with links to updates.</description>
-            <language>en</language>
-          </channel>
-        </rss>
-      XML
+      root = Nokogiri::XML(out).xpath('//rss').first
+
+      expect(root.namespaces).to match({
+        'xmlns:sparkle' => 'http://www.andymatuschak.org/xml-namespaces/sparkle',
+        'xmlns:dc' => 'http://purl.org/dc/elements/1.1/'
+      })
+      expect(root.attr('version')).to eq('2.0')
+
+      expect(out).to have_xpath('//rss/channel/title').with_text(title)
+      expect(out).to have_xpath('//rss/channel/link').with_text(link)
+      expect(out).to have_xpath('//rss/channel/description').with_text(description)
+      expect(out).to have_xpath('//rss/channel/language').with_text(language)
     end
   end
 
   describe '.add_item' do
     subject(:cast) { described_class }
-    it 'creates a new item in xml if there is no' do
+
+    let(:item_data) do
+      OpenStruct.new(
+        title: 'Version 2.0',
+        description: 'HTML',
+        pub_date: DateTime.new(2014, 07, 26, 15, 20, 11),
+        url: 'http://sparkle-project.org/files/Sparkle%20Test%20App.zip',
+        sparkle_version: '2.0',
+        length: 107758,
+        type: 'application/octet-stream',
+        dsa_signature: 'MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=='
+      )
+    end
+
+    let(:new_item_data) do
+      OpenStruct.new(
+        title: 'Version 3.0',
+        description: 'HTML 2',
+        pub_date: DateTime.new(2014, 07, 26, 15, 20, 11),
+        url: 'http://sparkle-project.org/files/Sparkle%20Test%20App.zip',
+        sparkle_version: '3.0',
+        length: 107758,
+        type: 'application/octet-stream',
+        dsa_signature: 'ZCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=='
+      )
+    end
+
+
+    it 'creates a new item in xml if there is no existing items' do
       original_xml =  <<-XML.gsub(/^ {8}/, '')
         <?xml version="1.0" encoding="utf-8"?>
         <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
@@ -45,37 +172,17 @@ describe Sparklecast::Appcast do
         </rss>
       XML
 
-      item = Sparklecast::Appcast::Item.new
-
-      item.title = 'Version 2.0'
-      item.description = 'HTML'
-      item.pub_date = DateTime.new(2014, 07, 26, 15, 20, 11)
-      item.url = 'http://sparkle-project.org/files/Sparkle%20Test%20App.zip'
-      item.sparkle_version = '2.0'
-      item.length = 107758
-      item.type = 'application/octet-stream'
-      item.dsa_signature = 'MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=='
-
+      item = create_item(item_data)
       result = cast.add_item(original_xml, item)
 
-      expect(result).to eq(<<-XML.gsub(/^ {8}/, ''))
-        <?xml version="1.0" encoding="utf-8"?>
-        <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
-          <channel>
-            <title>Sparkle Test App Changelog</title>
-            <link>http://sparkle-project.org/files/sparkletestcast.xml</link>
-            <description>Most recent changes with links to updates.</description>
-            <language>en</language>
-            <item>
-              <title>Version 2.0</title>
-              <description><![CDATA[HTML]]></description>
-              <pubDate>Sat, 26 Jul 2014 15:20:11 +0000</pubDate>
-              <enclosure url="http://sparkle-project.org/files/Sparkle%20Test%20App.zip" length="107758" type="application/octet-stream" sparkle:version="2.0" sparkle:dsaSignature="MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=="/>
-            </item>
-          </channel>
-        </rss>
-      XML
+      expect(result).to have_xpath('//rss/channel/title').with_text(title)
+      expect(result).to have_xpath('//rss/channel/link').with_text(link)
+      expect(result).to have_xpath('//rss/channel/description').with_text(description)
+      expect(result).to have_xpath('//rss/channel/language').with_text(language)
+
+      check_item(result, '//rss/channel/item[1]', item_data)
     end
+
 
     it 'appends a new item into xml' do
       original_xml =  <<-XML.gsub(/^ {8}/, '')
@@ -96,48 +203,36 @@ describe Sparklecast::Appcast do
         </rss>
       XML
 
-      item = Sparklecast::Appcast::Item.new
-
-      item.title = 'Version 3.0'
-      item.description = 'HTML 2'
-      item.pub_date = DateTime.new(2014, 07, 26, 15, 20, 11)
-      item.url = 'http://sparkle-project.org/files/Sparkle%20Test%20App.zip'
-      item.sparkle_version = '2.0'
-      item.length = 107758
-      item.type = 'application/octet-stream'
-      item.dsa_signature = 'MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=='
-
+      item = create_item(new_item_data)
       result = cast.add_item(original_xml, item)
 
-      expect(result).to eq(<<-XML.gsub(/^ {8}/, ''))
-        <?xml version="1.0" encoding="utf-8"?>
-        <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
-          <channel>
-            <title>Sparkle Test App Changelog</title>
-            <link>http://sparkle-project.org/files/sparkletestcast.xml</link>
-            <description>Most recent changes with links to updates.</description>
-            <language>en</language>
-            <item>
-              <title>Version 2.0</title>
-              <description><![CDATA[HTML]]></description>
-              <pubDate>Sat, 26 Jul 2014 15:20:11 +0000</pubDate>
-              <enclosure url="http://sparkle-project.org/files/Sparkle%20Test%20App.zip" length="107758" type="application/octet-stream" sparkle:version="2.0" sparkle:dsaSignature="MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=="/>
-            </item>
-            <item>
-              <title>Version 3.0</title>
-              <description><![CDATA[HTML 2]]></description>
-              <pubDate>Sat, 26 Jul 2014 15:20:11 +0000</pubDate>
-              <enclosure url="http://sparkle-project.org/files/Sparkle%20Test%20App.zip" length="107758" type="application/octet-stream" sparkle:version="2.0" sparkle:dsaSignature="MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=="/>
-            </item>
-          </channel>
-        </rss>
-      XML
+      expect(result).to have_xpath('//rss/channel/title').with_text(title)
+      expect(result).to have_xpath('//rss/channel/link').with_text(link)
+      expect(result).to have_xpath('//rss/channel/description').with_text(description)
+      expect(result).to have_xpath('//rss/channel/language').with_text(language)
+
+      check_item(result, '//rss/channel/item[1]', item_data)
+      check_item(result, '//rss/channel/item[2]', new_item_data)
     end
   end
 end
 
 describe Sparklecast::Appcast::Item do
-  subject(:item) { described_class.new }
+
+  let(:item_data) do
+    OpenStruct.new(
+      title: 'Version 2.0',
+      description: 'HTML',
+      pub_date: DateTime.new(2014, 07, 26, 15, 20, 11),
+      url: 'http://sparkle-project.org/files/Sparkle%20Test%20App.zip',
+      sparkle_version: '2.0',
+      length: 107758,
+      type: 'application/octet-stream',
+      dsa_signature: 'MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=='
+    )
+  end
+
+  subject(:item) { create_item(item_data) }
 
   describe '#to_node' do
     it 'creates item node' do
@@ -156,15 +251,7 @@ describe Sparklecast::Appcast::Item do
 
       xml = builder.to_xml
 
-      expect(xml).to eq(<<-XML.gsub(/^ {8}/, ''))
-        <?xml version="1.0" encoding="utf-8"?>
-        <item>
-          <title>Version 2.0</title>
-          <description><![CDATA[HTML]]></description>
-          <pubDate>Sat, 26 Jul 2014 15:20:11 +0000</pubDate>
-          <enclosure url="http://sparkle-project.org/files/Sparkle%20Test%20App.zip" length="107758" type="application/octet-stream" sparkle:version="2.0" sparkle:dsaSignature="MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=="/>
-        </item>
-      XML
+      check_item(xml, '/item', item_data)
     end
   end
 end
