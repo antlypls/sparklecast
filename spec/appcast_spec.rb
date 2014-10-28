@@ -158,20 +158,8 @@ describe Sparklecast::Appcast do
       )
     end
 
-
     it 'creates a new item in xml if there is no existing items' do
-      original_xml =  <<-XML.gsub(/^ {8}/, '')
-        <?xml version="1.0" encoding="utf-8"?>
-        <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
-          <channel>
-            <title>Sparkle Test App Changelog</title>
-            <link>http://sparkle-project.org/files/sparkletestcast.xml</link>
-            <description>Most recent changes with links to updates.</description>
-            <language>en</language>
-          </channel>
-        </rss>
-      XML
-
+      original_xml = File.read(File.expand_path('../fixtures/empty_appcast.xml', __FILE__))
       item = create_item(item_data)
       result = cast.add_item(original_xml, item)
 
@@ -183,25 +171,8 @@ describe Sparklecast::Appcast do
       check_item(result, '//rss/channel/item[1]', item_data)
     end
 
-
     it 'appends a new item into xml' do
-      original_xml =  <<-XML.gsub(/^ {8}/, '')
-        <?xml version="1.0" encoding="utf-8"?>
-        <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
-          <channel>
-            <title>Sparkle Test App Changelog</title>
-            <link>http://sparkle-project.org/files/sparkletestcast.xml</link>
-            <description>Most recent changes with links to updates.</description>
-            <language>en</language>
-            <item>
-              <title>Version 2.0</title>
-              <description><![CDATA[HTML]]></description>
-              <pubDate>Sat, 26 Jul 2014 15:20:11 +0000</pubDate>
-              <enclosure url="http://sparkle-project.org/files/Sparkle%20Test%20App.zip" length="107758" type="application/octet-stream" sparkle:version="2.0" sparkle:dsaSignature="MCwCFCdoW13VBGJWIfIklKxQVyetgxE7AhQTVuY9uQT0KOV1UEk21epBsGZMPg=="/>
-            </item>
-          </channel>
-        </rss>
-      XML
+      original_xml = File.read(File.expand_path('../fixtures/appcast_with_item.xml', __FILE__))
 
       item = create_item(new_item_data)
       result = cast.add_item(original_xml, item)
